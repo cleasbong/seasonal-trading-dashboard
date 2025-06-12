@@ -4,370 +4,559 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>June Seasonal Trading Patterns - Convergence Analysis</title>
-    <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
-    <script src="https://unpkg.com/recharts@2.8.0/lib/index.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 24px;
         }
-        #root {
-            width: 100%;
-            height: 100vh;
+
+        .container {
+            background: white;
+            border-radius: 16px;
+            padding: 32px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .title {
+            text-align: center;
+            margin-bottom: 8px;
+            font-size: 32px;
+            font-weight: bold;
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #6b7280;
+            margin-bottom: 32px;
+            font-size: 16px;
+        }
+
+        .nav-buttons {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 32px;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .nav-button {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 14px;
+        }
+
+        .nav-button.active {
+            background: linear-gradient(45deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .nav-button:not(.active) {
+            background: #f3f4f6;
+            color: #374151;
+        }
+
+        .nav-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        .content {
+            background: #f9fafb;
+            border-radius: 12px;
+            padding: 24px;
+            min-height: 500px;
+        }
+
+        .section-title {
+            margin-bottom: 24px;
+            color: #374151;
+            font-size: 24px;
+        }
+
+        .chart-container {
+            display: flex;
+            align-items: flex-end;
+            height: 400px;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            gap: 3px;
+            overflow-x: auto;
+            border: 1px solid #e5e7eb;
+        }
+
+        .chart-bar {
+            min-width: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+            cursor: pointer;
+        }
+
+        .bar {
+            width: 20px;
+            border-radius: 2px;
+            margin-bottom: 8px;
+            transition: all 0.2s ease;
+            position: relative;
+        }
+
+        .bar:hover {
+            opacity: 1 !important;
+            transform: scaleY(1.05);
+        }
+
+        .bar-label {
+            font-size: 12px;
+            color: #666;
+            text-align: center;
+            writing-mode: horizontal-tb;
+        }
+
+        .tooltip {
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            white-space: nowrap;
+            z-index: 1000;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.2s;
+        }
+
+        .tooltip::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 4px solid transparent;
+            border-top-color: rgba(0, 0, 0, 0.9);
+        }
+
+        .opportunities-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 16px;
+            margin-bottom: 32px;
+        }
+
+        .opportunity-card {
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+            overflow: hidden;
+            border: 2px solid;
+        }
+
+        .opportunity-card.long {
+            background: linear-gradient(135deg, #dcfce7, #bbf7d0);
+            border-color: #22c55e;
+        }
+
+        .opportunity-card.short {
+            background: linear-gradient(135deg, #fecaca, #fca5a5);
+            border-color: #ef4444;
+        }
+
+        .card-rank {
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .card-rank.long { background: #22c55e; }
+        .card-rank.short { background: #ef4444; }
+
+        .card-title {
+            margin: 0 0 12px 0;
+            font-size: 20px;
+            color: #1f2937;
+        }
+
+        .card-detail {
+            margin-bottom: 8px;
+            color: #374151;
+        }
+
+        .card-detail strong {
+            font-weight: bold;
+        }
+
+        .card-counts {
+            font-size: 14px;
+            color: #6b7280;
+        }
+
+        .weights-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 32px;
+            align-items: start;
+        }
+
+        .weights-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .weight-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #f3f4f6;
+            border-radius: 8px;
+            border: 2px solid transparent;
+        }
+
+        .weight-item.high {
+            border-color: #22c55e;
+        }
+
+        .weight-item.medium {
+            border-color: #3b82f6;
+        }
+
+        .weight-bar {
+            height: 6px;
+            border-radius: 3px;
+            margin-right: 8px;
+        }
+
+        .weight-bar.high { background: #22c55e; }
+        .weight-bar.medium { background: #3b82f6; }
+        .weight-bar.low { background: #6b7280; }
+
+        .info-box {
+            margin-top: 32px;
+            padding: 20px;
+            background: linear-gradient(135deg, #ede9fe, #ddd6fe);
+            border-radius: 12px;
+            border: 2px solid #8b5cf6;
+        }
+
+        .info-title {
+            margin: 0 0 12px 0;
+            color: #7c3aed;
+            font-size: 16px;
+        }
+
+        .info-text {
+            margin: 0 0 8px 0;
+            color: #374151;
+            font-size: 14px;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 16px;
+            }
+            
+            .title {
+                font-size: 24px;
+            }
+            
+            .weights-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .chart-container {
+                height: 300px;
+            }
         }
     </style>
 </head>
 <body>
-    <div id="root"></div>
+    <div class="container">
+        <h1 class="title">Convergence-Weighted Trading Signals</h1>
+        <p class="subtitle">Multi-timeframe analysis with correlation-weighted convergence scoring</p>
+        
+        <div class="nav-buttons">
+            <button class="nav-button active" onclick="showView('convergence')">Convergence Analysis</button>
+            <button class="nav-button" onclick="showView('opportunities')">Top Opportunities</button>
+            <button class="nav-button" onclick="showView('weights')">Correlation Weights</button>
+        </div>
 
-    <script type="text/babel">
-        const { useState, useMemo } = React;
-        const { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, BarChart, Bar, Area, AreaChart, Cell } = Recharts;
+        <div class="content">
+            <div id="convergence-view">
+                <h2 class="section-title">Daily Convergence Analysis</h2>
+                <div class="chart-container" id="convergence-chart"></div>
+            </div>
 
-        const SeasonalTradingDashboard = () => {
-            const [selectedView, setSelectedView] = useState('convergence');
+            <div id="opportunities-view" style="display: none;">
+                <h2 class="section-title">Top Trading Opportunities</h2>
+                <div class="opportunities-grid" id="opportunities-grid"></div>
+            </div>
 
-            // Correlation data for weighting
-            const correlationWeights = {
-                '1Y': 91.43,
-                '3Y': 37.21,
-                '5Y': 68.86,
-                '7Y': 59.47,
-                '10Y': 77.29,
-                '15Y': 71.27,
-                '20Y': 74.00,
-                '25Y': 81.92,
-                '30Y': 88.56
-            };
+            <div id="weights-view" style="display: none;">
+                <h2 class="section-title">Correlation Weights & Impact</h2>
+                <div class="weights-container">
+                    <div>
+                        <h3 style="margin-bottom: 16px; font-size: 18px; color: #374151;">Correlation Strength by Period</h3>
+                        <div class="chart-container" id="weights-chart" style="height: 300px;"></div>
+                    </div>
+                    <div>
+                        <h3 style="margin-bottom: 16px; font-size: 18px; color: #374151;">Weighting Impact</h3>
+                        <div class="weights-list" id="weights-list"></div>
+                    </div>
+                </div>
+                <div class="info-box">
+                    <h4 class="info-title">📊 How Weighting Works</h4>
+                    <p class="info-text">• <strong>High correlation periods (1Y: 91%, 30Y: 89%)</strong> get more weight in the final signal</p>
+                    <p class="info-text">• <strong>Convergence strength</strong> measures how many timeframes agree × signal strength</p>
+                    <p class="info-text">• <strong>Best opportunities</strong> combine high convergence + strong weighted consensus</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-            // Complete daily data for June
-            const dailyRawData = [
-                { day: 1, '1Y': null, '3Y': 50, '5Y': 50, '7Y': 60, '10Y': 63, '15Y': -55, '20Y': 60, '25Y': 67, '30Y': 62 },
-                { day: 2, '1Y': null, '3Y': 100, '5Y': 100, '7Y': 100, '10Y': 86, '15Y': 80, '20Y': 71, '25Y': 65, '30Y': 67 },
-                { day: 3, '1Y': 100, '3Y': 50, '5Y': 50, '7Y': 60, '10Y': -57, '15Y': -55, '20Y': -64, '25Y': -65, '30Y': -71 },
-                { day: 4, '1Y': 100, '3Y': 100, '5Y': 67, '7Y': 80, '10Y': 67, '15Y': 60, '20Y': 69, '25Y': 71, '30Y': 71 },
-                { day: 5, '1Y': 100, '3Y': 100, '5Y': 100, '7Y': 100, '10Y': 71, '15Y': 70, '20Y': 64, '25Y': 67, '30Y': 73 },
-                { day: 6, '1Y': -100, '3Y': 67, '5Y': 67, '7Y': 80, '10Y': 71, '15Y': 73, '20Y': 60, '25Y': -53, '30Y': -55 },
-                { day: 7, '1Y': -100, '3Y': -67, '5Y': 50, '7Y': 50, '10Y': 50, '15Y': -58, '20Y': -67, '25Y': -58, '30Y': 50 },
-                { day: 8, '1Y': null, '3Y': 50, '5Y': 75, '7Y': 60, '10Y': 63, '15Y': 55, '20Y': -53, '25Y': -56, '30Y': -52 },
-                { day: 9, '1Y': null, '3Y': 50, '5Y': 75, '7Y': 75, '10Y': -57, '15Y': 50, '20Y': 50, '25Y': -53, '30Y': 52 },
-                { day: 10, '1Y': 100, '3Y': 50, '5Y': 75, '7Y': 80, '10Y': 71, '15Y': 64, '20Y': 50, '25Y': -53, '30Y': -57 },
-                { day: 11, '1Y': 100, '3Y': 100, '5Y': 67, '7Y': 80, '10Y': 83, '15Y': 60, '20Y': -54, '25Y': 50, '30Y': 50 },
-                { day: 12, '1Y': 100, '3Y': 100, '5Y': 100, '7Y': 80, '10Y': 67, '15Y': 50, '20Y': -64, '25Y': -56, '30Y': -55 },
-                { day: 13, '1Y': 100, '3Y': 67, '5Y': 67, '7Y': 60, '10Y': 57, '15Y': 64, '20Y': 67, '25Y': 58, '30Y': 59 },
-                { day: 14, '1Y': 100, '3Y': 100, '5Y': 100, '7Y': 83, '10Y': 75, '15Y': 67, '20Y': 67, '25Y': 58, '30Y': 55 },
-                { day: 15, '1Y': null, '3Y': 100, '5Y': 75, '7Y': 60, '10Y': -63, '15Y': -55, '20Y': 53, '25Y': 56, '30Y': 57 },
-                { day: 16, '1Y': null, '3Y': -100, '5Y': -75, '7Y': -75, '10Y': -57, '15Y': 50, '20Y': 50, '25Y': 59, '30Y': 67 },
-                { day: 17, '1Y': 100, '3Y': 100, '5Y': 100, '7Y': 100, '10Y': 86, '15Y': 82, '20Y': 79, '25Y': 71, '30Y': 71 },
-                { day: 18, '1Y': 100, '3Y': 67, '5Y': 67, '7Y': 60, '10Y': 57, '15Y': 64, '20Y': 67, '25Y': 58, '30Y': 59 },
-                { day: 19, '1Y': null, '3Y': null, '5Y': -100, '7Y': -67, '10Y': -60, '15Y': -63, '20Y': -58, '25Y': -56, '30Y': 55 },
-                { day: 20, '1Y': -100, '3Y': -100, '5Y': 100, '7Y': 50, '10Y': 50, '15Y': 60, '20Y': -57, '25Y': -56, '30Y': -57 },
-                { day: 21, '1Y': -100, '3Y': -67, '5Y': 50, '7Y': -67, '10Y': 50, '15Y': -58, '20Y': -53, '25Y': -53, '30Y': 50 },
-                { day: 22, '1Y': null, '3Y': 50, '5Y': 75, '7Y': 60, '10Y': 50, '15Y': -55, '20Y': -67, '25Y': -67, '30Y': -62 },
-                { day: 23, '1Y': null, '3Y': 50, '5Y': 75, '7Y': 75, '10Y': 86, '15Y': 80, '20Y': 57, '25Y': 53, '30Y': 52 },
-                { day: 24, '1Y': -100, '3Y': 50, '5Y': 50, '7Y': -60, '10Y': -71, '15Y': -82, '20Y': -79, '25Y': -76, '30Y': -67 },
-                { day: 25, '1Y': 100, '3Y': 100, '5Y': 67, '7Y': -60, '10Y': -67, '15Y': -60, '20Y': -54, '25Y': -53, '30Y': -57 },
-                { day: 26, '1Y': 100, '3Y': 50, '5Y': -67, '7Y': 60, '10Y': -57, '15Y': 50, '20Y': 50, '25Y': 61, '30Y': 55 },
-                { day: 27, '1Y': 100, '3Y': 67, '5Y': 67, '7Y': 60, '10Y': -57, '15Y': 64, '20Y': 60, '25Y': 58, '30Y': 55 },
-                { day: 28, '1Y': -100, '3Y': -67, '5Y': 50, '7Y': 67, '10Y': 75, '15Y': 67, '20Y': 67, '25Y': 68, '30Y': 73 },
-                { day: 29, '1Y': null, '3Y': 50, '5Y': 75, '7Y': 80, '10Y': 63, '15Y': 64, '20Y': 67, '25Y': 67, '30Y': 71 },
-                { day: 30, '1Y': null, '3Y': 50, '5Y': 50, '7Y': 50, '10Y': 57, '15Y': 60, '20Y': -57, '25Y': -53, '30Y': -52 }
-            ];
-
-            // Calculate weighted convergence score for each day
-            const convergenceData = useMemo(() => {
-                return dailyRawData.map(dayData => {
-                    let totalWeight = 0;
-                    let weightedSum = 0;
-                    let convergenceCount = 0;
-                    let longCount = 0;
-                    let shortCount = 0;
-                    
-                    const timeframes = ['1Y', '3Y', '5Y', '7Y', '10Y', '15Y', '20Y', '25Y', '30Y'];
-                    const validSignals = [];
-                    
-                    timeframes.forEach(tf => {
-                        const value = dayData[tf];
-                        if (value !== null && value !== undefined) {
-                            const weight = correlationWeights[tf] / 100;
-                            const normalizedValue = value / 100;
-                            
-                            totalWeight += weight;
-                            weightedSum += normalizedValue * weight;
-                            
-                            validSignals.push({ timeframe: tf, value, weight });
-                            
-                            if (value > 0) longCount++;
-                            if (value < 0) shortCount++;
-                        }
-                    });
-                    
-                    convergenceCount = validSignals.length;
-                    const avgSignal = totalWeight > 0 ? weightedSum / totalWeight : 0;
-                    const weightedScore = avgSignal * 100;
-                    
-                    const strongestDirection = longCount > shortCount ? 'LONG' : shortCount > longCount ? 'SHORT' : 'NEUTRAL';
-                    const agreementRatio = Math.max(longCount, shortCount) / Math.max(convergenceCount, 1);
-                    const convergenceStrength = agreementRatio * Math.abs(weightedScore);
-                    
-                    return {
-                        day: dayData.day,
-                        weightedScore: Math.round(weightedScore * 100) / 100,
-                        convergenceStrength: Math.round(convergenceStrength * 100) / 100,
-                        signalCount: convergenceCount,
-                        direction: strongestDirection,
-                        longCount,
-                        shortCount,
-                        validSignals,
-                        ...dayData
-                    };
-                });
-            }, [dailyRawData]);
-
-            // Find best trading opportunities
-            const topOpportunities = useMemo(() => {
-                return convergenceData
-                    .filter(d => Math.abs(d.convergenceStrength) > 30)
-                    .sort((a, b) => Math.abs(b.convergenceStrength) - Math.abs(a.convergenceStrength))
-                    .slice(0, 10);
-            }, [convergenceData]);
-
-            const CustomTooltip = ({ active, payload, label }) => {
-                if (active && payload && payload.length) {
-                    const data = convergenceData.find(d => d.day === label);
-                    return React.createElement('div', {
-                        style: {
-                            background: 'rgba(0, 0, 0, 0.9)',
-                            border: '1px solid #333',
-                            borderRadius: '12px',
-                            padding: '16px',
-                            color: 'white',
-                            minWidth: '200px'
-                        }
-                    }, [
-                        React.createElement('p', { key: 'title', style: { margin: '0 0 12px 0', fontWeight: 'bold', fontSize: '16px' } }, `Day ${label}`),
-                        React.createElement('p', { key: 'score', style: { margin: '0 0 8px 0', color: '#60f5a1' } }, `Weighted Score: ${data?.weightedScore.toFixed(1)}%`),
-                        React.createElement('p', { key: 'convergence', style: { margin: '0 0 8px 0', color: '#fbbf24' } }, `Convergence: ${data?.convergenceStrength.toFixed(1)}`),
-                        React.createElement('p', { key: 'direction', style: { margin: '0 0 8px 0', color: '#a78bfa' } }, `Direction: ${data?.direction}`),
-                        React.createElement('p', { key: 'signals', style: { margin: '0 0 8px 0', color: '#38bdf8' } }, `Signals: ${data?.signalCount} timeframes`),
-                        React.createElement('p', { key: 'counts', style: { margin: '0', fontSize: '12px', color: '#9ca3af' } }, `${data?.longCount} LONG, ${data?.shortCount} SHORT`)
-                    ]);
-                }
-                return null;
-            };
-
-            const getBarColor = (value, strength) => {
-                const intensity = Math.min(Math.abs(strength) / 50, 1);
-                if (value > 0) {
-                    return `rgba(34, 197, 94, ${0.3 + intensity * 0.7})`;
-                } else {
-                    return `rgba(239, 68, 68, ${0.3 + intensity * 0.7})`;
-                }
-            };
-
-            return React.createElement('div', {
-                style: { 
-                    padding: '24px', 
-                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                    minHeight: '100vh',
-                    fontFamily: 'Arial, sans-serif'
-                }
-            }, 
-                React.createElement('div', {
-                    style: {
-                        background: 'white',
-                        borderRadius: '16px',
-                        padding: '32px',
-                        boxShadow: '0 20px 40px rgba(0,0,0,0.1)'
-                    }
-                }, [
-                    React.createElement('h1', {
-                        key: 'title',
-                        style: {
-                            textAlign: 'center',
-                            marginBottom: '8px',
-                            fontSize: '32px',
-                            fontWeight: 'bold',
-                            color: '#1f2937',
-                            background: 'linear-gradient(45deg, #667eea, #764ba2)',
-                            WebkitBackgroundClip: 'text',
-                            WebkitTextFillColor: 'transparent'
-                        }
-                    }, 'Convergence-Weighted Trading Signals'),
-                    React.createElement('p', {
-                        key: 'subtitle',
-                        style: {
-                            textAlign: 'center',
-                            color: '#6b7280',
-                            marginBottom: '32px',
-                            fontSize: '16px'
-                        }
-                    }, 'Multi-timeframe analysis with correlation-weighted convergence scoring'),
-                    
-                    React.createElement('div', {
-                        key: 'nav',
-                        style: {
-                            display: 'flex',
-                            justifyContent: 'center',
-                            marginBottom: '32px',
-                            gap: '8px',
-                            flexWrap: 'wrap'
-                        }
-                    }, [
-                        { key: 'convergence', label: 'Convergence Analysis' },
-                        { key: 'heatmap', label: 'Signal Heatmap' },
-                        { key: 'opportunities', label: 'Top Opportunities' },
-                        { key: 'weights', label: 'Correlation Weights' }
-                    ].map(view => 
-                        React.createElement('button', {
-                            key: view.key,
-                            onClick: () => setSelectedView(view.key),
-                            style: {
-                                padding: '12px 24px',
-                                border: 'none',
-                                borderRadius: '8px',
-                                background: selectedView === view.key 
-                                    ? 'linear-gradient(45deg, #667eea, #764ba2)' 
-                                    : '#f3f4f6',
-                                color: selectedView === view.key ? 'white' : '#374151',
-                                fontWeight: 'bold',
-                                cursor: 'pointer',
-                                transition: 'all 0.3s ease',
-                                fontSize: '14px'
-                            }
-                        }, view.label)
-                    )),
-
-                    React.createElement('div', {
-                        key: 'content',
-                        style: {
-                            background: '#f9fafb',
-                            borderRadius: '12px',
-                            padding: '24px',
-                            minHeight: '500px'
-                        }
-                    }, 
-                        selectedView === 'convergence' ? 
-                            React.createElement('div', {}, [
-                                React.createElement('h2', {
-                                    key: 'title',
-                                    style: { marginBottom: '24px', color: '#374151', fontSize: '24px' }
-                                }, 'Daily Convergence Analysis'),
-                                React.createElement(ResponsiveContainer, {
-                                    key: 'chart',
-                                    width: '100%',
-                                    height: 500
-                                },
-                                    React.createElement(AreaChart, { data: convergenceData }, [
-                                        React.createElement(CartesianGrid, { key: 'grid', strokeDasharray: '3 3', stroke: '#e5e7eb' }),
-                                        React.createElement(XAxis, { key: 'xaxis', dataKey: 'day', stroke: '#6b7280' }),
-                                        React.createElement(YAxis, { key: 'yaxis', stroke: '#6b7280', domain: [-100, 100] }),
-                                        React.createElement(Tooltip, { key: 'tooltip', content: CustomTooltip }),
-                                        React.createElement('defs', { key: 'defs' }, [
-                                            React.createElement('linearGradient', { key: 'grad1', id: 'convergenceGradient', x1: '0', y1: '0', x2: '0', y2: '1' }, [
-                                                React.createElement('stop', { key: 'stop1', offset: '0%', stopColor: '#22c55e', stopOpacity: 0.8 }),
-                                                React.createElement('stop', { key: 'stop2', offset: '100%', stopColor: '#22c55e', stopOpacity: 0.1 })
-                                            ])
-                                        ]),
-                                        React.createElement(Area, {
-                                            key: 'area',
-                                            type: 'monotone',
-                                            dataKey: 'convergenceStrength',
-                                            stroke: '#667eea',
-                                            strokeWidth: 3,
-                                            fill: 'url(#convergenceGradient)'
-                                        })
-                                    ])
-                                )
-                            ]) :
-                        selectedView === 'opportunities' ?
-                            React.createElement('div', {}, [
-                                React.createElement('h2', {
-                                    key: 'title',
-                                    style: { marginBottom: '24px', color: '#374151', fontSize: '24px' }
-                                }, 'Top Trading Opportunities'),
-                                React.createElement('div', {
-                                    key: 'grid',
-                                    style: {
-                                        display: 'grid',
-                                        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
-                                        gap: '16px',
-                                        marginBottom: '32px'
-                                    }
-                                }, topOpportunities.slice(0, 6).map((opp, index) =>
-                                    React.createElement('div', {
-                                        key: opp.day,
-                                        style: {
-                                            background: opp.weightedScore > 0 
-                                                ? 'linear-gradient(135deg, #dcfce7, #bbf7d0)' 
-                                                : 'linear-gradient(135deg, #fecaca, #fca5a5)',
-                                            border: `2px solid ${opp.weightedScore > 0 ? '#22c55e' : '#ef4444'}`,
-                                            borderRadius: '12px',
-                                            padding: '20px',
-                                            position: 'relative',
-                                            overflow: 'hidden'
-                                        }
-                                    }, [
-                                        React.createElement('div', {
-                                            key: 'rank',
-                                            style: {
-                                                position: 'absolute',
-                                                top: '8px',
-                                                right: '8px',
-                                                background: opp.weightedScore > 0 ? '#22c55e' : '#ef4444',
-                                                color: 'white',
-                                                padding: '4px 8px',
-                                                borderRadius: '6px',
-                                                fontSize: '12px',
-                                                fontWeight: 'bold'
-                                            }
-                                        }, `#${index + 1}`),
-                                        React.createElement('h3', {
-                                            key: 'day',
-                                            style: { margin: '0 0 12px 0', fontSize: '20px', color: '#1f2937' }
-                                        }, `Day ${opp.day}`),
-                                        React.createElement('div', { key: 'direction', style: { marginBottom: '8px' } }, [
-                                            React.createElement('span', { key: 'label', style: { fontWeight: 'bold', color: '#374151' } }, 'Direction: '),
-                                            React.createElement('span', {
-                                                key: 'value',
-                                                style: { 
-                                                    color: opp.weightedScore > 0 ? '#16a34a' : '#dc2626',
-                                                    fontWeight: 'bold',
-                                                    fontSize: '16px'
-                                                }
-                                            }, `${opp.direction} (${Math.abs(opp.weightedScore).toFixed(1)}%)`)
-                                        ]),
-                                        React.createElement('div', { key: 'convergence', style: { marginBottom: '8px' } }, [
-                                            React.createElement('span', { key: 'label', style: { fontWeight: 'bold', color: '#374151' } }, 'Convergence: '),
-                                            React.createElement('span', { key: 'value' }, Math.abs(opp.convergenceStrength).toFixed(1))
-                                        ]),
-                                        React.createElement('div', { key: 'signals', style: { marginBottom: '8px' } }, [
-                                            React.createElement('span', { key: 'label', style: { fontWeight: 'bold', color: '#374151' } }, 'Signals: '),
-                                            React.createElement('span', { key: 'value' }, `${opp.signalCount} timeframes`)
-                                        ]),
-                                        React.createElement('div', {
-                                            key: 'counts',
-                                            style: { fontSize: '14px', color: '#6b7280' }
-                                        }, `${opp.longCount} LONG • ${opp.shortCount} SHORT`)
-                                    ])
-                                ))
-                            ]) :
-                            React.createElement('div', {}, 
-                                React.createElement('h2', {
-                                    style: { marginBottom: '24px', color: '#374151', fontSize: '24px' }
-                                }, selectedView === 'heatmap' ? 'Signal Strength Heatmap' : 'Correlation Weights')
-                            )
-                    )
-                ])
-            );
+    <script>
+        // Data
+        const correlationWeights = {
+            '1Y': 91.43, '3Y': 37.21, '5Y': 68.86, '7Y': 59.47, '10Y': 77.29,
+            '15Y': 71.27, '20Y': 74.00, '25Y': 81.92, '30Y': 88.56
         };
 
-        ReactDOM.render(React.createElement(SeasonalTradingDashboard), document.getElementById('root'));
+        const dailyRawData = [
+            { day: 1, '1Y': null, '3Y': 50, '5Y': 50, '7Y': 60, '10Y': 63, '15Y': -55, '20Y': 60, '25Y': 67, '30Y': 62 },
+            { day: 2, '1Y': null, '3Y': 100, '5Y': 100, '7Y': 100, '10Y': 86, '15Y': 80, '20Y': 71, '25Y': 65, '30Y': 67 },
+            { day: 3, '1Y': 100, '3Y': 50, '5Y': 50, '7Y': 60, '10Y': -57, '15Y': -55, '20Y': -64, '25Y': -65, '30Y': -71 },
+            { day: 4, '1Y': 100, '3Y': 100, '5Y': 67, '7Y': 80, '10Y': 67, '15Y': 60, '20Y': 69, '25Y': 71, '30Y': 71 },
+            { day: 5, '1Y': 100, '3Y': 100, '5Y': 100, '7Y': 100, '10Y': 71, '15Y': 70, '20Y': 64, '25Y': 67, '30Y': 73 },
+            { day: 6, '1Y': -100, '3Y': 67, '5Y': 67, '7Y': 80, '10Y': 71, '15Y': 73, '20Y': 60, '25Y': -53, '30Y': -55 },
+            { day: 7, '1Y': -100, '3Y': -67, '5Y': 50, '7Y': 50, '10Y': 50, '15Y': -58, '20Y': -67, '25Y': -58, '30Y': 50 },
+            { day: 8, '1Y': null, '3Y': 50, '5Y': 75, '7Y': 60, '10Y': 63, '15Y': 55, '20Y': -53, '25Y': -56, '30Y': -52 },
+            { day: 9, '1Y': null, '3Y': 50, '5Y': 75, '7Y': 75, '10Y': -57, '15Y': 50, '20Y': 50, '25Y': -53, '30Y': 52 },
+            { day: 10, '1Y': 100, '3Y': 50, '5Y': 75, '7Y': 80, '10Y': 71, '15Y': 64, '20Y': 50, '25Y': -53, '30Y': -57 },
+            { day: 11, '1Y': 100, '3Y': 100, '5Y': 67, '7Y': 80, '10Y': 83, '15Y': 60, '20Y': -54, '25Y': 50, '30Y': 50 },
+            { day: 12, '1Y': 100, '3Y': 100, '5Y': 100, '7Y': 80, '10Y': 67, '15Y': 50, '20Y': -64, '25Y': -56, '30Y': -55 },
+            { day: 13, '1Y': 100, '3Y': 67, '5Y': 67, '7Y': 60, '10Y': 57, '15Y': 64, '20Y': 67, '25Y': 58, '30Y': 59 },
+            { day: 14, '1Y': 100, '3Y': 100, '5Y': 100, '7Y': 83, '10Y': 75, '15Y': 67, '20Y': 67, '25Y': 58, '30Y': 55 },
+            { day: 15, '1Y': null, '3Y': 100, '5Y': 75, '7Y': 60, '10Y': -63, '15Y': -55, '20Y': 53, '25Y': 56, '30Y': 57 },
+            { day: 16, '1Y': null, '3Y': -100, '5Y': -75, '7Y': -75, '10Y': -57, '15Y': 50, '20Y': 50, '25Y': 59, '30Y': 67 },
+            { day: 17, '1Y': 100, '3Y': 100, '5Y': 100, '7Y': 100, '10Y': 86, '15Y': 82, '20Y': 79, '25Y': 71, '30Y': 71 },
+            { day: 18, '1Y': 100, '3Y': 67, '5Y': 67, '7Y': 60, '10Y': 57, '15Y': 64, '20Y': 67, '25Y': 58, '30Y': 59 },
+            { day: 19, '1Y': null, '3Y': null, '5Y': -100, '7Y': -67, '10Y': -60, '15Y': -63, '20Y': -58, '25Y': -56, '30Y': 55 },
+            { day: 20, '1Y': -100, '3Y': -100, '5Y': 100, '7Y': 50, '10Y': 50, '15Y': 60, '20Y': -57, '25Y': -56, '30Y': -57 },
+            { day: 21, '1Y': -100, '3Y': -67, '5Y': 50, '7Y': -67, '10Y': 50, '15Y': -58, '20Y': -53, '25Y': -53, '30Y': 50 },
+            { day: 22, '1Y': null, '3Y': 50, '5Y': 75, '7Y': 60, '10Y': 50, '15Y': -55, '20Y': -67, '25Y': -67, '30Y': -62 },
+            { day: 23, '1Y': null, '3Y': 50, '5Y': 75, '7Y': 75, '10Y': 86, '15Y': 80, '20Y': 57, '25Y': 53, '30Y': 52 },
+            { day: 24, '1Y': -100, '3Y': 50, '5Y': 50, '7Y': -60, '10Y': -71, '15Y': -82, '20Y': -79, '25Y': -76, '30Y': -67 },
+            { day: 25, '1Y': 100, '3Y': 100, '5Y': 67, '7Y': -60, '10Y': -67, '15Y': -60, '20Y': -54, '25Y': -53, '30Y': -57 },
+            { day: 26, '1Y': 100, '3Y': 50, '5Y': -67, '7Y': 60, '10Y': -57, '15Y': 50, '20Y': 50, '25Y': 61, '30Y': 55 },
+            { day: 27, '1Y': 100, '3Y': 67, '5Y': 67, '7Y': 60, '10Y': -57, '15Y': 64, '20Y': 60, '25Y': 58, '30Y': 55 },
+            { day: 28, '1Y': -100, '3Y': -67, '5Y': 50, '7Y': 67, '10Y': 75, '15Y': 67, '20Y': 67, '25Y': 68, '30Y': 73 },
+            { day: 29, '1Y': null, '3Y': 50, '5Y': 75, '7Y': 80, '10Y': 63, '15Y': 64, '20Y': 67, '25Y': 67, '30Y': 71 },
+            { day: 30, '1Y': null, '3Y': 50, '5Y': 50, '7Y': 50, '10Y': 57, '15Y': 60, '20Y': -57, '25Y': -53, '30Y': -52 }
+        ];
+
+        // Calculate convergence data
+        function calculateConvergenceData() {
+            return dailyRawData.map(dayData => {
+                let totalWeight = 0;
+                let weightedSum = 0;
+                let longCount = 0;
+                let shortCount = 0;
+                
+                const timeframes = ['1Y', '3Y', '5Y', '7Y', '10Y', '15Y', '20Y', '25Y', '30Y'];
+                
+                timeframes.forEach(tf => {
+                    const value = dayData[tf];
+                    if (value !== null && value !== undefined) {
+                        const weight = correlationWeights[tf] / 100;
+                        const normalizedValue = value / 100;
+                        
+                        totalWeight += weight;
+                        weightedSum += normalizedValue * weight;
+                        
+                        if (value > 0) longCount++;
+                        if (value < 0) shortCount++;
+                    }
+                });
+                
+                const convergenceCount = longCount + shortCount;
+                const avgSignal = totalWeight > 0 ? weightedSum / totalWeight : 0;
+                const weightedScore = avgSignal * 100;
+                
+                const strongestDirection = longCount > shortCount ? 'LONG' : shortCount > longCount ? 'SHORT' : 'NEUTRAL';
+                const agreementRatio = Math.max(longCount, shortCount) / Math.max(convergenceCount, 1);
+                const convergenceStrength = agreementRatio * Math.abs(weightedScore);
+                
+                return {
+                    day: dayData.day,
+                    weightedScore: Math.round(weightedScore * 100) / 100,
+                    convergenceStrength: Math.round(convergenceStrength * 100) / 100,
+                    signalCount: convergenceCount,
+                    direction: strongestDirection,
+                    longCount,
+                    shortCount
+                };
+            });
+        }
+
+        const convergenceData = calculateConvergenceData();
+        const topOpportunities = convergenceData
+            .filter(d => Math.abs(d.convergenceStrength) > 30)
+            .sort((a, b) => Math.abs(b.convergenceStrength) - Math.abs(a.convergenceStrength))
+            .slice(0, 10);
+
+        // Chart creation functions
+        function createChart(containerId, data, valueKey, labelKey = 'day') {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            const maxValue = Math.max(...data.map(d => Math.abs(d[valueKey] || 0)));
+            
+            data.forEach(item => {
+                const value = item[valueKey] || 0;
+                const height = Math.abs(value) / maxValue * 300;
+                const isPositive = value >= 0;
+                
+                const barContainer = document.createElement('div');
+                barContainer.className = 'chart-bar';
+                
+                const bar = document.createElement('div');
+                bar.className = 'bar';
+                bar.style.height = height + 'px';
+                bar.style.background = isPositive ? '#22c55e' : '#ef4444';
+                bar.style.opacity = '0.8';
+                
+                const label = document.createElement('div');
+                label.className = 'bar-label';
+                label.textContent = item[labelKey];
+                
+                const tooltip = document.createElement('div');
+                tooltip.className = 'tooltip';
+                tooltip.textContent = `${labelKey === 'day' ? 'Day ' + item[labelKey] : item[labelKey]}: ${value.toFixed(1)}${valueKey === 'value' && labelKey === 'period' ? '%' : ''}`;
+                
+                bar.addEventListener('mouseenter', () => {
+                    bar.style.opacity = '1';
+                    tooltip.style.opacity = '1';
+                });
+                
+                bar.addEventListener('mouseleave', () => {
+                    bar.style.opacity = '0.8';
+                    tooltip.style.opacity = '0';
+                });
+                
+                barContainer.appendChild(tooltip);
+                barContainer.appendChild(bar);
+                barContainer.appendChild(label);
+                container.appendChild(barContainer);
+            });
+        }
+
+        // View management
+        function showView(viewName) {
+            // Update nav buttons
+            document.querySelectorAll('.nav-button').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Hide all views
+            document.querySelectorAll('[id$="-view"]').forEach(view => {
+                view.style.display = 'none';
+            });
+            
+            // Show selected view
+            document.getElementById(viewName + '-view').style.display = 'block';
+            
+            // Create content based on view
+            if (viewName === 'convergence') {
+                createChart('convergence-chart', convergenceData, 'convergenceStrength');
+            } else if (viewName === 'opportunities') {
+                createOpportunitiesGrid();
+            } else if (viewName === 'weights') {
+                createWeightsView();
+            }
+        }
+
+        function createOpportunitiesGrid() {
+            const grid = document.getElementById('opportunities-grid');
+            grid.innerHTML = '';
+            
+            topOpportunities.slice(0, 6).forEach((opp, index) => {
+                const card = document.createElement('div');
+                card.className = `opportunity-card ${opp.weightedScore > 0 ? 'long' : 'short'}`;
+                
+                card.innerHTML = `
+                    <div class="card-rank ${opp.weightedScore > 0 ? 'long' : 'short'}">#${index + 1}</div>
+                    <h3 class="card-title">Day ${opp.day}</h3>
+                    <div class="card-detail"><strong>Direction:</strong> ${opp.direction} (${Math.abs(opp.weightedScore).toFixed(1)}%)</div>
+                    <div class="card-detail"><strong>Convergence:</strong> ${Math.abs(opp.convergenceStrength).toFixed(1)}</div>
+                    <div class="card-detail"><strong>Signals:</strong> ${opp.signalCount} timeframes</div>
+                    <div class="card-counts">${opp.longCount} LONG • ${opp.shortCount} SHORT</div>
+                `;
+                
+                grid.appendChild(card);
+            });
+        }
+
+        function createWeightsView() {
+            const correlationData = Object.entries(correlationWeights).map(([period, value]) => ({ period, value }));
+            createChart('weights-chart', correlationData, 'value', 'period');
+            
+            const weightsList = document.getElementById('weights-list');
+            weightsList.innerHTML = '';
+            
+            const sortedWeights = Object.entries(correlationWeights).sort(([,a], [,b]) => b - a);
+            
+            sortedWeights.forEach(([period, correlation]) => {
+                const item = document.createElement('div');
+                const level = correlation > 80 ? 'high' : correlation > 60 ? 'medium' : 'low';
+                item.className = `weight-item ${level}`;
+                
+                item.innerHTML = `
+                    <span style="font-weight: bold; color: #374151;">${period}</span>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="weight-bar ${level}" style="width: ${correlation}px;"></div>
+                        <span style="color: ${level === 'high' ? '#22c55e' : level === 'medium' ? '#3b82f6' : '#6b7280'}; font-weight: bold;">
+                            ${correlation.toFixed(1)}%
+                        </span>
+                    </div>
+                `;
+                
+                weightsList.appendChild(item);
+            });
+        }
+
+        // Initialize
+        showView('convergence');
     </script>
 </body>
 </html>
